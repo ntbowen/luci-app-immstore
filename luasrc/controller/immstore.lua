@@ -173,7 +173,7 @@ local apps_data = {
         name_en = "WireGuard",
         icon = "🔐",
         package = "luci-proto-wireguard",
-        detect = {"luci-proto-wireguard"},
+        detect = {"luci-proto-wireguard"}, -- detect 匹配 is_installed() 函数
         description = "高速VPN服务",
         category = "network"
     },
