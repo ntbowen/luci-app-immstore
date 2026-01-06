@@ -173,6 +173,7 @@ local apps_data = {
         name_en = "WireGuard",
         icon = "🔐",
         package = "luci-proto-wireguard",
+        detect = {"luci-proto-wireguard"},
         description = "高速VPN服务",
         category = "network"
     },
@@ -223,24 +224,31 @@ local apps_data = {
     }
 }
 
--- 检查软件包是否已安装（检查主包）
-local function is_installed(package_name)
-    local check_package = package_name
-    
-    -- 如果是语言包格式 luci-i18n-xxx-zh-cn，提取主包名 luci-app-xxx
-    local app_name = package_name:match("luci%-i18n%-(.+)%-zh%-cn")
-    if app_name then
-        check_package = "luci-app-" .. app_name
+-- 检查软件包是否已安装（支持单个或多个候选包名）
+local function is_installed(pkg_or_list)
+    local function check_one(name)
+        local check_name = name
+        -- 语言包格式 luci-i18n-xxx-zh-cn -> 主包 luci-app-xxx
+        local app_name = name:match("luci%-i18n%-(.+)%-zh%-cn")
+        if app_name then
+            check_name = "luci-app-" .. app_name
+        end
+        local h = io.popen("opkg status " .. check_name .. " 2>/dev/null")
+        if h then
+            local s = h:read("*a")
+            h:close()
+            return s:match("Status:%s+install ok installed") ~= nil
+        end
+        return false
     end
-    -- 否则直接检查包名本身（如 luci-proto-wireguard）
-    
-    local handle = io.popen("opkg list-installed " .. check_package .. " 2>/dev/null")
-    if handle then
-        local result = handle:read("*a")
-        handle:close()
-        return result ~= ""
+    if type(pkg_or_list) == "table" then
+        for _, n in ipairs(pkg_or_list) do
+            if check_one(n) then return true end
+        end
+        return false
+    else
+        return check_one(pkg_or_list)
     end
-    return false
 end
 
 -- 智能更新软件源（24小时内只更新一次）
@@ -285,7 +293,7 @@ function action_get_apps()
             icon = app.icon,
             description = app.description,
             category = app.category,
-            installed = is_installed(app.package)
+            installed = is_installed(app.detect or app.package)
         }
         table.insert(apps, app_info)
     end
