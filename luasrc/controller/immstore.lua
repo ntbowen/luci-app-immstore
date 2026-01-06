@@ -87,11 +87,11 @@ local apps_data = {
         category = "network"
     },
     {
-        id = "Home Proxy",
-        name = "Home Proxy",
-        name_en = "Home Proxy",
+        id = "HomeProxy",
+        name = "HomeProxy",
+        name_en = "HomeProxy",
         icon = "⚡",
-        package = "luci-i18n-home-proxy-zh-cn",
+        package = "luci-i18n-homeproxy-zh-cn",
         description = "科学上网代理工具",
         category = "network"
     },
