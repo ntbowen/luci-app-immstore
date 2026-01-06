@@ -224,15 +224,17 @@ local apps_data = {
 }
 
 -- 检查软件包是否已安装（检查主包）
-local function is_installed(i18n_package)
-    -- 从语言包名提取主包名 luci-i18n-xxx-zh-cn -> luci-app-xxx
-    local app_name = i18n_package:match("luci%-i18n%-(.+)%-zh%-cn")
-    if not app_name then
-        return false
-    end
+local function is_installed(package_name)
+    local check_package = package_name
     
-    local main_package = "luci-app-" .. app_name
-    local handle = io.popen("opkg list-installed " .. main_package .. " 2>/dev/null")
+    -- 如果是语言包格式 luci-i18n-xxx-zh-cn，提取主包名 luci-app-xxx
+    local app_name = package_name:match("luci%-i18n%-(.+)%-zh%-cn")
+    if app_name then
+        check_package = "luci-app-" .. app_name
+    end
+    -- 否则直接检查包名本身（如 luci-proto-wireguard）
+    
+    local handle = io.popen("opkg list-installed " .. check_package .. " 2>/dev/null")
     if handle then
         local result = handle:read("*a")
         handle:close()
@@ -384,18 +386,21 @@ function action_remove_app()
         return
     end
     
-    -- 卸载主包（从语言包名提取）
+    -- 卸载包（支持 i18n 和直接包名）
+    local packages_to_remove = {}
+    
+    -- 如果是语言包格式，提取主包名并同时卸载主包和语言包
     local app_name = app_config.package:match("luci%-i18n%-(.+)%-zh%-cn")
-    if not app_name then
-        result.code = 1
-        result.message = "无法解析包名"
-        http.prepare_content("application/json")
-        http.write(json.stringify(result))
-        return
+    if app_name then
+        local main_package = "luci-app-" .. app_name
+        table.insert(packages_to_remove, main_package)
+        table.insert(packages_to_remove, app_config.package)
+    else
+        -- 直接包名（如 luci-proto-wireguard），直接卸载
+        table.insert(packages_to_remove, app_config.package)
     end
     
-    local main_package = "luci-app-" .. app_name
-    local cmd = string.format("opkg remove %s %s 2>&1", main_package, app_config.package)
+    local cmd = string.format("opkg remove %s 2>&1", table.concat(packages_to_remove, " "))
     local handle = io.popen(cmd)
     local output = ""
     if handle then
