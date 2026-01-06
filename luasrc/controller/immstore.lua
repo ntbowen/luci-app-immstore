@@ -173,7 +173,7 @@ local apps_data = {
         name_en = "WireGuard",
         icon = "🔐",
         package = "luci-proto-wireguard",
-        detect = {"luci-proto-wireguard"}, -- detect 匹配 is_installed() 函数
+        detect = {"luci-proto-wireguard"},
         description = "高速VPN服务",
         category = "network"
     },
@@ -233,11 +233,12 @@ local function is_installed(pkg_or_list)
         if app_name then
             check_name = "luci-app-" .. app_name
         end
-        local h = io.popen("opkg status " .. check_name .. " 2>/dev/null")
+        -- 用 opkg list-installed 检查，更可靠
+        local h = io.popen("opkg list-installed 2>/dev/null | grep -q '^" .. check_name .. " ' && echo 1 || echo 0")
         if h then
-            local s = h:read("*a")
+            local result = h:read("*a"):gsub("\n", "")
             h:close()
-            return s:match("Status:%s+install ok installed") ~= nil
+            return result == "1"
         end
         return false
     end
