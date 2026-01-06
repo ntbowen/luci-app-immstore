@@ -10,6 +10,7 @@ PKG_MAINTAINER:=Leeson
 LUCI_TITLE:=LuCI Support for Package Manager
 LUCI_DEPENDS:=
 LUCI_PKGARCH:=all
+LUCI_LANG:=zh-cn
 
 include $(TOPDIR)/feeds/luci/luci.mk
 
