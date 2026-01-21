@@ -52,19 +52,23 @@
 .filter-tabs {
     display: flex;
     gap: 10px;
-    margin-bottom: 25px;
+    margin-bottom: 20px;
     flex-wrap: wrap;
+    align-items: center;
 }
 
 .filter-tab {
-    padding: 8px 20px;
+    padding: 10px 20px;
     background-color: #f5f5f5;
-    border: 2px solid transparent;
-    border-radius: 20px;
+    border: none;
+    border-radius: 8px;
     cursor: pointer;
     font-size: 14px;
     transition: all 0.3s;
     color: #666;
+    height: 40px;
+    line-height: 20px;
+    box-sizing: border-box;
 }
 
 .filter-tab:hover {
@@ -74,7 +78,82 @@
 .filter-tab.active {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
-    border-color: transparent;
+}
+
+.search-box {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.search-box input {
+    flex: 1;
+    min-width: 200px;
+    max-width: 400px;
+    padding: 0 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.3s;
+    height: 40px;
+    box-sizing: border-box;
+}
+
+.search-box input:focus {
+    border-color: #667eea;
+}
+
+.search-stats {
+    color: #333;
+    font-size: 13px;
+    text-shadow: 0 0 8px rgba(255,255,255,0.8);
+}
+
+body.dark .search-stats,
+.dark .search-stats,
+[data-darkmode="1"] .search-stats {
+    color: #fff !important;
+    text-shadow: 0 0 8px rgba(0,0,0,0.8);
+}
+
+.btn-refresh {
+    padding: 0 16px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s;
+    height: 40px;
+    line-height: 40px;
+    box-sizing: border-box;
+    white-space: nowrap;
+}
+
+.btn-refresh:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+}
+
+.app-card.unavailable {
+    opacity: 0.6;
+    border-color: #ccc;
+}
+
+.unavailable-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: #999;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
 }
 
 .apps-grid {
@@ -104,6 +183,9 @@
     cursor: pointer;
     position: relative;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 220px;
 }
 
 .app-card:hover {
@@ -141,7 +223,11 @@
     color: #666;
     margin-bottom: 15px;
     line-height: 1.5;
-    min-height: 40px;
+    flex: 1;
+}
+
+.app-actions {
+    margin-top: auto;
 }
 
 /* argon暗黑模式适配 */
@@ -512,6 +598,245 @@ body.dark .header-section,
     justify-content: flex-end;
 }
 
+/* Edit Modal Styles */
+.edit-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+
+.edit-modal.show {
+    display: flex;
+}
+
+.edit-modal-content {
+    background: white;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.edit-modal-header {
+    padding: 20px;
+    border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.edit-modal-title {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.edit-modal-close {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: #999;
+}
+
+.edit-modal-body {
+    padding: 20px;
+}
+
+.edit-form-group {
+    margin-bottom: 16px;
+}
+
+.edit-form-group label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 500;
+    color: #333;
+}
+
+.edit-form-group input,
+.edit-form-group select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #d9d9d9;
+    border-radius: 6px;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+.edit-form-group input:focus,
+.edit-form-group select:focus {
+    border-color: #667eea;
+    outline: none;
+}
+
+.icon-selector {
+    border: 1px solid #d9d9d9;
+    border-radius: 6px;
+    padding: 12px;
+}
+
+.icon-preview {
+    font-size: 48px;
+    text-align: center;
+    padding: 10px;
+    background: #f5f5f5;
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+
+.icon-preview img {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+}
+
+.icon-options {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.icon-tab {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #d9d9d9;
+    background: #f5f5f5;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.icon-tab.active {
+    background: #667eea;
+    color: white;
+    border-color: #667eea;
+}
+
+.icon-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 8px;
+}
+
+.icon-item {
+    font-size: 24px;
+    text-align: center;
+    padding: 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.icon-item:hover {
+    background: #e6f7ff;
+}
+
+.icon-item.selected {
+    background: #667eea;
+    border-radius: 6px;
+}
+
+.icon-url {
+    display: flex;
+    gap: 8px;
+}
+
+.icon-url input {
+    flex: 1;
+}
+
+.btn-preview-icon {
+    padding: 8px 12px;
+    background: #667eea;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.edit-modal-footer {
+    padding: 15px 20px;
+    border-top: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.btn-cancel {
+    padding: 10px 20px;
+    background: #f5f5f5;
+    color: #666;
+    border: 1px solid #d9d9d9;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.btn-save {
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+/* Dark mode for edit modal */
+body.dark .edit-modal-content,
+.dark .edit-modal-content,
+[data-darkmode="1"] .edit-modal-content {
+    background: #2a2d35 !important;
+}
+
+body.dark .edit-modal-header,
+.dark .edit-modal-header,
+[data-darkmode="1"] .edit-modal-header {
+    border-color: #3a3f4b !important;
+}
+
+body.dark .edit-modal-title,
+.dark .edit-modal-title,
+[data-darkmode="1"] .edit-modal-title {
+    color: #e8e8e8 !important;
+}
+
+body.dark .edit-form-group label,
+.dark .edit-form-group label,
+[data-darkmode="1"] .edit-form-group label {
+    color: #ccc !important;
+}
+
+body.dark .edit-form-group input,
+body.dark .edit-form-group select,
+.dark .edit-form-group input,
+.dark .edit-form-group select,
+[data-darkmode="1"] .edit-form-group input,
+[data-darkmode="1"] .edit-form-group select {
+    background: #1e2128 !important;
+    border-color: #3a3f4b !important;
+    color: #e8e8e8 !important;
+}
+
+body.dark .icon-selector,
+.dark .icon-selector,
+[data-darkmode="1"] .icon-selector {
+    border-color: #3a3f4b !important;
+}
+
+body.dark .icon-preview,
+.dark .icon-preview,
+[data-darkmode="1"] .icon-preview {
+    background: #1e2128 !important;
+}
+
 .log-close-btn {
     padding: 8px 24px;
     background: #667eea;
@@ -538,6 +863,9 @@ body.dark .header-section,
         <div class="filter-tab active" data-category="all" onclick="filterApps('all')">
             全部应用
         </div>
+        <div class="filter-tab" data-category="builtin" onclick="filterApps('builtin')">
+            精选应用
+        </div>
         <div class="filter-tab" data-category="system" onclick="filterApps('system')">
             系统工具
         </div>
@@ -550,6 +878,15 @@ body.dark .header-section,
         <div class="filter-tab" data-category="services" onclick="filterApps('services')">
             服务
         </div>
+        <div class="filter-tab" data-category="other" onclick="filterApps('other')">
+            更多应用
+        </div>
+    </div>
+    
+    <div class="search-box">
+        <input type="text" id="search-input" placeholder="搜索应用..." oninput="searchApps(this.value)">
+        <button class="btn btn-refresh" onclick="refreshApps()">🔄 刷新列表</button>
+        <span class="search-stats" id="search-stats"></span>
     </div>
 
     <div class="apps-grid" id="apps-grid">
@@ -571,6 +908,87 @@ body.dark .header-section,
     <div class="toast-message" id="toast-message"></div>
 </div>
 
+<!-- Edit Modal -->
+<div class="edit-modal" id="edit-modal">
+    <div class="edit-modal-content">
+        <div class="edit-modal-header">
+            <div class="edit-modal-title">编辑应用信息</div>
+            <button class="edit-modal-close" onclick="closeEditModal()">✕</button>
+        </div>
+        <div class="edit-modal-body">
+            <input type="hidden" id="edit-app-id">
+            <div class="edit-form-group">
+                <label>应用名称</label>
+                <input type="text" id="edit-app-name" placeholder="中文名称">
+            </div>
+            <div class="edit-form-group">
+                <label>英文名称</label>
+                <input type="text" id="edit-app-name-en" placeholder="English Name">
+            </div>
+            <div class="edit-form-group">
+                <label>应用描述</label>
+                <input type="text" id="edit-app-desc" placeholder="应用描述">
+            </div>
+            <div class="edit-form-group">
+                <label>应用图标</label>
+                <div class="icon-selector">
+                    <div class="icon-preview" id="icon-preview">📦</div>
+                    <div class="icon-options">
+                        <button type="button" class="icon-tab active" onclick="switchIconTab('builtin')">内置图标</button>
+                        <button type="button" class="icon-tab" onclick="switchIconTab('url')">外部URL</button>
+                    </div>
+                    <div class="icon-builtin" id="icon-builtin">
+                        <div class="icon-grid">
+                            <span class="icon-item" onclick="selectIcon('🎨')">🎨</span>
+                            <span class="icon-item" onclick="selectIcon('🌐')">🌐</span>
+                            <span class="icon-item" onclick="selectIcon('🔧')">🔧</span>
+                            <span class="icon-item" onclick="selectIcon('📁')">📁</span>
+                            <span class="icon-item" onclick="selectIcon('💾')">💾</span>
+                            <span class="icon-item" onclick="selectIcon('🔒')">🔒</span>
+                            <span class="icon-item" onclick="selectIcon('🚀')">🚀</span>
+                            <span class="icon-item" onclick="selectIcon('⚡')">⚡</span>
+                            <span class="icon-item" onclick="selectIcon('🎮')">🎮</span>
+                            <span class="icon-item" onclick="selectIcon('📊')">📊</span>
+                            <span class="icon-item" onclick="selectIcon('🔔')">🔔</span>
+                            <span class="icon-item" onclick="selectIcon('📡')">📡</span>
+                            <span class="icon-item" onclick="selectIcon('🖥️')">🖥️</span>
+                            <span class="icon-item" onclick="selectIcon('📦')">📦</span>
+                            <span class="icon-item" onclick="selectIcon('🐳')">🐳</span>
+                            <span class="icon-item" onclick="selectIcon('☁️')">☁️</span>
+                            <span class="icon-item" onclick="selectIcon('🔥')">🔥</span>
+                            <span class="icon-item" onclick="selectIcon('💡')">💡</span>
+                            <span class="icon-item" onclick="selectIcon('🎵')">🎵</span>
+                            <span class="icon-item" onclick="selectIcon('📹')">📹</span>
+                            <span class="icon-item" onclick="selectIcon('🛡️')">🛡️</span>
+                            <span class="icon-item" onclick="selectIcon('⬇️')">⬇️</span>
+                            <span class="icon-item" onclick="selectIcon('🌙')">🌙</span>
+                            <span class="icon-item" onclick="selectIcon('☀️')">☀️</span>
+                        </div>
+                    </div>
+                    <div class="icon-url" id="icon-url" style="display:none;">
+                        <input type="text" id="edit-icon-url" placeholder="输入图标URL (如: https://example.com/icon.png)">
+                        <button type="button" class="btn-preview-icon" onclick="previewIconUrl()">预览</button>
+                    </div>
+                </div>
+            </div>
+            <div class="edit-form-group">
+                <label>分类</label>
+                <select id="edit-app-category">
+                    <option value="system">系统工具</option>
+                    <option value="network">网络服务</option>
+                    <option value="nas">NAS</option>
+                    <option value="services">服务</option>
+                    <option value="other">其他</option>
+                </select>
+            </div>
+        </div>
+        <div class="edit-modal-footer">
+            <button class="btn btn-cancel" onclick="closeEditModal()">取消</button>
+            <button class="btn btn-save" onclick="saveAppEdit()">保存</button>
+        </div>
+    </div>
+</div>
+
 <!-- Log Modal -->
 <div class="log-modal" id="log-modal">
     <div class="log-modal-content">
@@ -590,6 +1008,119 @@ body.dark .header-section,
 <script>
 let allApps = [];
 let currentCategory = 'all';
+let searchKeyword = '';
+let currentEditApp = null;
+let currentIconType = 'builtin';
+let selectedIcon = '📦';
+
+// 编辑应用信息
+function openEditModal(appId, event) {
+    if (event) event.stopPropagation();
+    
+    const app = allApps.find(a => a.id === appId);
+    if (!app) return;
+    
+    currentEditApp = app;
+    document.getElementById('edit-app-id').value = app.id;
+    document.getElementById('edit-app-name').value = app.name || '';
+    document.getElementById('edit-app-name-en').value = app.name_en || '';
+    document.getElementById('edit-app-desc').value = app.description || '';
+    document.getElementById('edit-app-category').value = app.category || 'other';
+    
+    // 设置图标
+    if (app.icon && app.icon.startsWith('http')) {
+        currentIconType = 'url';
+        document.getElementById('edit-icon-url').value = app.icon;
+        document.getElementById('icon-preview').innerHTML = '<img src="' + app.icon + '" onerror="this.parentElement.textContent=\'📦\'">';
+        switchIconTab('url');
+    } else {
+        currentIconType = 'builtin';
+        selectedIcon = app.icon || '📦';
+        document.getElementById('icon-preview').textContent = selectedIcon;
+        switchIconTab('builtin');
+    }
+    
+    document.getElementById('edit-modal').classList.add('show');
+}
+
+function closeEditModal() {
+    document.getElementById('edit-modal').classList.remove('show');
+    currentEditApp = null;
+}
+
+function switchIconTab(type) {
+    currentIconType = type;
+    document.querySelectorAll('.icon-tab').forEach(tab => tab.classList.remove('active'));
+    document.querySelector('.icon-tab[onclick*="' + type + '"]').classList.add('active');
+    
+    if (type === 'builtin') {
+        document.getElementById('icon-builtin').style.display = 'block';
+        document.getElementById('icon-url').style.display = 'none';
+    } else {
+        document.getElementById('icon-builtin').style.display = 'none';
+        document.getElementById('icon-url').style.display = 'flex';
+    }
+}
+
+function selectIcon(icon) {
+    selectedIcon = icon;
+    document.getElementById('icon-preview').textContent = icon;
+    document.querySelectorAll('.icon-item').forEach(item => item.classList.remove('selected'));
+    event.target.classList.add('selected');
+}
+
+function previewIconUrl() {
+    const url = document.getElementById('edit-icon-url').value.trim();
+    if (url) {
+        document.getElementById('icon-preview').innerHTML = '<img src="' + url + '" onerror="this.parentElement.textContent=\'❌\'">';
+    }
+}
+
+function saveAppEdit() {
+    const appId = document.getElementById('edit-app-id').value;
+    const name = document.getElementById('edit-app-name').value.trim();
+    const nameEn = document.getElementById('edit-app-name-en').value.trim();
+    const desc = document.getElementById('edit-app-desc').value.trim();
+    const category = document.getElementById('edit-app-category').value;
+    
+    let icon;
+    if (currentIconType === 'url') {
+        icon = document.getElementById('edit-icon-url').value.trim() || '📦';
+    } else {
+        icon = selectedIcon || '📦';
+    }
+    
+    // 发送保存请求
+    showLoading('正在保存...');
+    
+    XHR.get('<%=url("admin/immstore/save_app_edit")%>', {
+        app_id: appId,
+        name: name,
+        name_en: nameEn,
+        description: desc,
+        icon: icon,
+        category: category
+    }, function(xhr, data) {
+        hideLoading();
+        
+        if (data && data.code === 0) {
+            // 更新本地数据
+            const app = allApps.find(a => a.id === appId);
+            if (app) {
+                if (name) app.name = name;
+                if (nameEn) app.name_en = nameEn;
+                if (desc) app.description = desc;
+                app.icon = icon;
+                app.category = category;
+            }
+            renderApps();
+            closeEditModal();
+            showToast('保存成功', '应用信息已更新', 'success');
+        } else {
+            showToast('保存失败', data ? data.message : '未知错误', 'error');
+        }
+    });
+}
 
 // 显示Toast通知
 function showToast(title, message, type) {
@@ -643,6 +1174,7 @@ function loadApps() {
         
         if (data && data.code === 0) {
             allApps = data.apps;
+            updateStats(data);
             renderApps();
         } else {
             showToast('错误', '加载应用列表失败', 'error');
@@ -650,33 +1182,99 @@ function loadApps() {
     });
 }
 
+// 更新统计信息
+function updateStats(data) {
+    const stats = document.getElementById('search-stats');
+    if (stats && data) {
+        let text = '共 ' + data.total + ' 个应用 (精选 ' + data.builtin_count + ' / 更多 ' + data.dynamic_count + ')';
+        if (data.updated_at) {
+            const date = new Date(data.updated_at * 1000);
+            text += ' | 更新于 ' + date.toLocaleString('zh-CN');
+        }
+        stats.textContent = text;
+    }
+}
+
+// 刷新应用列表（从软件源重新获取）
+function refreshApps() {
+    showLoading('正在刷新应用列表...');
+    
+    XHR.get('<%=url("admin/immstore/refresh_apps")%>', null, function(xhr, data) {
+        hideLoading();
+        
+        if (data && data.code === 0) {
+            allApps = data.apps;
+            updateStats(data);
+            renderApps();
+            showToast('刷新成功', '已从软件源获取 ' + data.total + ' 个应用', 'success');
+        } else {
+            showToast('错误', '刷新应用列表失败', 'error');
+        }
+    });
+}
+
+// 搜索应用
+function searchApps(keyword) {
+    searchKeyword = keyword.toLowerCase().trim();
+    renderApps();
+}
+
 // 渲染应用卡片
 function renderApps() {
     const grid = document.getElementById('apps-grid');
-    const filteredApps = currentCategory === 'all' 
-        ? allApps 
-        : allApps.filter(app => app.category === currentCategory);
+    
+    // 先按分类筛选
+    let filteredApps = allApps;
+    if (currentCategory === 'builtin') {
+        filteredApps = allApps.filter(app => app.builtin === true);
+    } else if (currentCategory === 'other') {
+        filteredApps = allApps.filter(app => app.builtin === false);
+    } else if (currentCategory !== 'all') {
+        filteredApps = allApps.filter(app => app.category === currentCategory);
+    }
+    
+    // 再按关键词搜索
+    if (searchKeyword) {
+        filteredApps = filteredApps.filter(app => 
+            app.name.toLowerCase().includes(searchKeyword) ||
+            app.name_en.toLowerCase().includes(searchKeyword) ||
+            app.id.toLowerCase().includes(searchKeyword) ||
+            (app.description && app.description.toLowerCase().includes(searchKeyword))
+        );
+    }
+    
+    // 隐藏软件源中不存在的内置应用（除非已安装）
+    filteredApps = filteredApps.filter(app => app.available !== false || app.installed);
     
     if (filteredApps.length === 0) {
         grid.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><div class="empty-state-text">暂无应用</div></div>';
         return;
     }
     
-    grid.innerHTML = filteredApps.map(app => `
-        <div class="app-card ${app.installed ? 'installed' : ''}" data-id="${app.id}">
+    grid.innerHTML = filteredApps.map(app => {
+        // 处理图标显示：支持 emoji 和 URL
+        let iconHtml;
+        if (app.icon && app.icon.startsWith('http')) {
+            iconHtml = '<img src="' + app.icon + '" style="width:48px;height:48px;object-fit:contain;" onerror="this.parentElement.textContent=\'📦\'">';
+        } else {
+            iconHtml = app.icon || '📦';
+        }
+        
+        return `
+        <div class="app-card ${app.installed ? 'installed' : ''}" data-id="${app.id}" onclick="openEditModal('${app.id}', event)">
             ${app.installed ? '<div class="installed-badge">已安装</div>' : ''}
-            <div class="app-icon">${app.icon}</div>
+            <div class="app-icon">${iconHtml}</div>
             <div class="app-name">${app.name}</div>
             <div class="app-name-en">${app.name_en}</div>
             <div class="app-desc">${app.description}</div>
             <div class="app-actions">
                 ${app.installed 
-                    ? '<button class="btn btn-remove" onclick="removeApp(\'' + app.id + '\')">卸载</button>'
-                    : '<button class="btn btn-install" onclick="installApp(\'' + app.id + '\')">安装</button>'
+                    ? '<button class="btn btn-remove" onclick="event.stopPropagation();removeApp(\'' + app.id + '\', \'' + (app.package || '') + '\')">卸载</button>'
+                    : '<button class="btn btn-install" onclick="event.stopPropagation();installApp(\'' + app.id + '\', \'' + (app.package || '') + '\')">安装</button>'
                 }
             </div>
         </div>
-    `).join('');
+    `}).join('');
 }
 
 // 分类筛选
@@ -695,7 +1293,7 @@ function filterApps(category) {
 }
 
 // 安装应用
-function installApp(appId) {
+function installApp(appId, pkgName) {
     const app = allApps.find(a => a.id === appId);
     if (!app) return;
     
@@ -703,7 +1301,7 @@ function installApp(appId) {
         // 显示安装中的日志窗口
         showLogModal('正在安装 ' + app.name, '正在准备安装...\n检查软件源更新状态...\n', true);
         
-        XHR.get('<%=url("admin/immstore/install_app")%>', {app_id: appId}, function(xhr, data) {
+        XHR.get('<%=url("admin/immstore/install_app")%>', {app_id: appId, package: pkgName || app.package || appId}, function(xhr, data) {
             if (data && data.code === 0) {
                 // 显示成功日志
                 const logText = '=== 安装成功 ===\n\n' + (data.output || '安装完成');
@@ -721,7 +1319,7 @@ function installApp(appId) {
 }
 
 // 卸载应用
-function removeApp(appId) {
+function removeApp(appId, pkgName) {
     const app = allApps.find(a => a.id === appId);
     if (!app) return;
     
@@ -729,7 +1327,7 @@ function removeApp(appId) {
         // 显示卸载中的日志窗口
         showLogModal('正在卸载 ' + app.name, '正在卸载应用...\n', true);
         
-        XHR.get('<%=url("admin/immstore/remove_app")%>', {app_id: appId}, function(xhr, data) {
+        XHR.get('<%=url("admin/immstore/remove_app")%>', {app_id: appId, package: pkgName || app.package || appId}, function(xhr, data) {
             if (data && data.code === 0) {
                 // 显示成功日志
                 const logText = '=== 卸载成功 ===\n\n' + (data.output || '卸载完成');
