@@ -6,12 +6,15 @@ OpenWrt/ImmortalWrt LuCI 应用商店
 
 - 🎨 **卡片式界面**: 现代化应用商店设计，支持暗黑模式
 - 📦 **动态应用列表**: 自动从软件源获取所有 luci-app-* 包
+- 📊 **完整包信息**: 显示版本号、包大小、描述信息
 - 🏷️ **分类筛选**: 按系统工具、网络服务、NAS、服务等分类浏览
 - 🔍 **搜索功能**: 支持按名称、描述搜索应用
 - ✏️ **自定义编辑**: 点击卡片可编辑应用名称、图标、描述
 - 🖼️ **图标支持**: 内置 emoji 图标或自定义 URL 图标
 - 💾 **缓存机制**: 应用列表缓存到本地，加快加载速度
-- 🔄 **手动刷新**: 点击刷新按钮从软件源更新列表
+- 🔄 **自动更新**: 首次运行自动更新软件源，手动刷新也会更新
+- 🌐 **语言包支持**: 安装应用时自动安装中文语言包
+- 🔧 **双包管理器**: 自动检测并兼容 opkg 和 apk (ImmortalWrt 24+)
 
 ## 界面预览
 
@@ -89,8 +92,19 @@ apk add luci-app-immstore_*.apk
 
 - **后端**: LuCI + Lua
 - **前端**: HTML/CSS/JavaScript
-- **包管理**: 兼容 opkg 和 apk (ImmortalWrt 24+)
+- **包管理**: 自动检测并兼容 opkg 和 apk (ImmortalWrt 24+)
 - **缓存**: JSON 文件存储 (`/etc/immstore_apps.json`)
+
+### 包管理器兼容性
+
+| 功能 | opkg | apk (ImmortalWrt 24+) |
+|------|------|----------------------|
+| 获取包列表 | `opkg list` | `apk list` |
+| 获取包信息 | `/var/opkg-lists/` | `apk info` |
+| 安装 | `opkg install --force-overwrite` | `apk add --force-overwrite` |
+| 卸载 | `opkg remove --force-removal-of-dependent-packages` | `apk del -r` |
+| 自动安装语言包 | ✅ | ✅ |
+| 自动卸载语言包 | ✅ | ✅ |
 
 ## 与 iStore 的区别
 

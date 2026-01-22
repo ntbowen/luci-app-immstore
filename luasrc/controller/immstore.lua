@@ -317,36 +317,184 @@ local function smart_update()
     return false
 end
 
--- 从软件源获取所有 luci-app-* 包
+-- 从软件源获取所有 luci-app-* 包（包含版本、大小、描述）
 local function get_available_packages()
     local packages = {}
-    local h = io.popen("apk search luci-app-* 2>/dev/null | head -600")
-    if h then
-        for line in h:lines() do
-            local full_name = line:match("^([^%s]+)")
-            if full_name and full_name:match("^luci%-app%-") then
-                -- 找到最后一个 -数字 的位置来提取包名
-                local last_dash_pos = nil
-                for i = #full_name, 1, -1 do
-                    if full_name:sub(i, i) == "-" then
-                        local next_char = full_name:sub(i + 1, i + 1)
-                        if next_char:match("%d") then
-                            last_dash_pos = i
-                            break
+    
+    -- 检测包管理器类型
+    local h = io.popen("which apk 2>/dev/null")
+    local apk_path = h:read("*a"):gsub("%s+", "")
+    h:close()
+    local use_apk = (apk_path ~= "")
+    
+    if use_apk then
+        -- APK: 使用 apk list 获取包列表
+        -- 格式: luci-app-acme-25.349.43382~3b81faf noarch {feeds/luci/...} (GPL-3.0-or-later)
+        h = io.popen("apk list 2>/dev/null | grep '^luci-app-'")
+        if h then
+            for line in h:lines() do
+                -- 解析 apk list 输出
+                local full_name = line:match("^([^%s]+)")
+                if full_name then
+                    -- 从 full_name 提取包名和版本
+                    -- luci-app-acme-25.349.43382~3b81faf -> luci-app-acme, 25.349.43382~3b81faf
+                    local pkg_name, version
+                    -- 找到最后一个 -数字 的位置
+                    local last_dash_pos = nil
+                    for i = #full_name, 1, -1 do
+                        if full_name:sub(i, i) == "-" then
+                            local next_char = full_name:sub(i + 1, i + 1)
+                            if next_char:match("%d") then
+                                last_dash_pos = i
+                                break
+                            end
                         end
                     end
-                end
-                
-                if last_dash_pos and last_dash_pos > 1 then
-                    local pkg_name = full_name:sub(1, last_dash_pos - 1)
+                    
+                    if last_dash_pos and last_dash_pos > 1 then
+                        pkg_name = full_name:sub(1, last_dash_pos - 1)
+                        version = full_name:sub(last_dash_pos + 1)
+                    else
+                        pkg_name = full_name
+                        version = ""
+                    end
+                    
                     if pkg_name:match("^luci%-app%-") and not packages[pkg_name] then
-                        packages[pkg_name] = true
+                        packages[pkg_name] = {
+                            name = pkg_name,
+                            version = version,
+                            description = "",
+                            size = 0
+                        }
                     end
                 end
             end
+            h:close()
         end
-        h:close()
+        
+        -- 批量获取包描述和大小（只获取前100个以提高速度）
+        local pkg_list = {}
+        local count = 0
+        for pkg_name, _ in pairs(packages) do
+            if count < 100 then
+                table.insert(pkg_list, pkg_name)
+                count = count + 1
+            end
+        end
+        
+        if #pkg_list > 0 then
+            h = io.popen("apk info " .. table.concat(pkg_list, " ") .. " 2>/dev/null")
+            if h then
+                local current_pkg = nil
+                for line in h:lines() do
+                    -- 匹配 "包名-版本 description:" 格式
+                    local pkg_with_ver = line:match("^([^%s]+) description:")
+                    if pkg_with_ver then
+                        -- 从 pkg_with_ver 提取包名
+                        for i = #pkg_with_ver, 1, -1 do
+                            if pkg_with_ver:sub(i, i) == "-" then
+                                local next_char = pkg_with_ver:sub(i + 1, i + 1)
+                                if next_char:match("%d") then
+                                    current_pkg = pkg_with_ver:sub(1, i - 1)
+                                    break
+                                end
+                            end
+                        end
+                    elseif current_pkg and packages[current_pkg] and line ~= "" and not line:match("webpage:") and not line:match("installed size:") then
+                        if packages[current_pkg].description == "" then
+                            packages[current_pkg].description = line
+                        end
+                    end
+                    
+                    -- 匹配大小
+                    local size_pkg = line:match("^([^%s]+) installed size:")
+                    if size_pkg then
+                        for i = #size_pkg, 1, -1 do
+                            if size_pkg:sub(i, i) == "-" then
+                                local next_char = size_pkg:sub(i + 1, i + 1)
+                                if next_char:match("%d") then
+                                    current_pkg = size_pkg:sub(1, i - 1)
+                                    break
+                                end
+                            end
+                        end
+                    elseif current_pkg and line:match("^%d+") then
+                        local size = tonumber(line:match("^(%d+)"))
+                        if packages[current_pkg] and size then
+                            packages[current_pkg].size = size
+                        end
+                    end
+                end
+                h:close()
+            end
+        end
+    else
+        -- OPKG: 使用 opkg list 获取包列表
+        -- 格式: luci-app-acme - 25.349.43382~3b81faf - ACME package - LuCI interface
+        h = io.popen("opkg list 2>/dev/null | grep '^luci-app-'")
+        if h then
+            for line in h:lines() do
+                -- 解析 opkg list 输出: 包名 - 版本 - 描述
+                local pkg_name, version, desc = line:match("^([^%s]+)%s+%-%s+([^%s]+)%s+%-%s+(.*)$")
+                if not pkg_name then
+                    -- 有些包可能没有描述
+                    pkg_name, version = line:match("^([^%s]+)%s+%-%s+([^%s]+)")
+                    desc = ""
+                end
+                
+                if pkg_name and pkg_name:match("^luci%-app%-") and not packages[pkg_name] then
+                    packages[pkg_name] = {
+                        name = pkg_name,
+                        version = version or "",
+                        description = desc or "",
+                        size = 0
+                    }
+                end
+            end
+            h:close()
+        end
+        
+        -- 尝试从 opkg lists 索引文件获取大小信息
+        -- opkg lists 可能在 /usr/lib/opkg/lists 或 /var/opkg-lists
+        local lists_dirs = {"/var/opkg-lists", "/usr/lib/opkg/lists"}
+        local lists_dir = nil
+        
+        for _, dir in ipairs(lists_dirs) do
+            local dir_check = io.popen("ls " .. dir .. "/*.gz " .. dir .. "/[!.]* 2>/dev/null | grep -v '\\.sig$' | head -1")
+            if dir_check then
+                local first_file = dir_check:read("*a"):gsub("%s+", "")
+                dir_check:close()
+                if first_file ~= "" then
+                    lists_dir = dir
+                    break
+                end
+            end
+        end
+        
+        if lists_dir then
+            -- 从 lists 文件读取包大小（支持 gzip 压缩）
+            h = io.popen("zcat " .. lists_dir .. "/*.gz 2>/dev/null; cat " .. lists_dir .. "/[!.]* 2>/dev/null | grep -v '^$'")
+            if h then
+                local current_pkg = nil
+                for line in h:lines() do
+                    local pkg = line:match("^Package:%s*(.+)")
+                    if pkg and packages[pkg] then
+                        current_pkg = pkg
+                    elseif current_pkg then
+                        local size = line:match("^Size:%s*(%d+)")
+                        if size and packages[current_pkg] then
+                            packages[current_pkg].size = tonumber(size)
+                        end
+                        if line == "" then
+                            current_pkg = nil
+                        end
+                    end
+                end
+                h:close()
+            end
+        end
     end
+    
     return packages
 end
 
@@ -366,6 +514,18 @@ local function build_builtin_index()
     return index
 end
 
+-- 格式化文件大小
+local function format_size(bytes)
+    if not bytes or bytes == 0 then return "" end
+    if bytes < 1024 then
+        return string.format("%d B", bytes)
+    elseif bytes < 1024 * 1024 then
+        return string.format("%.2f KiB", bytes / 1024)
+    else
+        return string.format("%.2f MiB", bytes / (1024 * 1024))
+    end
+end
+
 -- 生成完整的应用列表（内置+动态）
 local function generate_apps_list()
     local apps = {}
@@ -377,6 +537,8 @@ local function generate_apps_list()
         local pkg_name = app.package:match("luci%-i18n%-(.+)%-zh%-cn")
         local main_pkg = pkg_name and ("luci-app-" .. pkg_name) or app.package
         
+        local pkg_info = available_packages[main_pkg]
+        
         local app_info = {
             id = app.id,
             name = app.name,
@@ -385,15 +547,18 @@ local function generate_apps_list()
             description = app.description,
             category = app.category,
             package = app.package,
-            available = available_packages[main_pkg] and true or false,
-            builtin = true
+            available = pkg_info and true or false,
+            builtin = true,
+            version = pkg_info and pkg_info.version or "",
+            size = pkg_info and pkg_info.size or 0,
+            size_str = pkg_info and format_size(pkg_info.size) or ""
         }
         table.insert(apps, app_info)
         added[main_pkg] = true
     end
     
     -- 2. 添加软件源中有但内置列表没有的应用
-    for pkg_name, _ in pairs(available_packages) do
+    for pkg_name, pkg_info in pairs(available_packages) do
         if not added[pkg_name] then
             -- 生成友好名称：luci-app-xxx -> Xxx
             local short_name = pkg_name:match("luci%-app%-(.+)")
@@ -404,11 +569,14 @@ local function generate_apps_list()
                 name = display_name,
                 name_en = display_name,
                 icon = "📦",
-                description = pkg_name,
+                description = pkg_info.description or pkg_name,
                 category = "other",
                 package = pkg_name,
                 available = true,
-                builtin = false
+                builtin = false,
+                version = pkg_info.version or "",
+                size = pkg_info.size or 0,
+                size_str = format_size(pkg_info.size)
             }
             table.insert(apps, app_info)
         end
@@ -582,18 +750,67 @@ function action_install_app()
     -- 智能更新软件源（24小时内只更新一次）
     smart_update()
     
-    -- 安装包（兼容 opkg 和 apk）
-    local cmd = string.format("(command -v opkg >/dev/null && opkg install %s || apk add %s) 2>&1", install_package, install_package)
+    -- 检测包管理器类型
+    local h = io.popen("which apk 2>/dev/null")
+    local apk_path = h:read("*a"):gsub("%s+", "")
+    h:close()
+    local use_apk = (apk_path ~= "")
+    
+    -- 构建安装包列表：主包 + 中文语言包
+    local packages_to_install = install_package
+    local i18n_pkg = nil
+    
+    -- 如果是 luci-app-xxx 格式，尝试同时安装对应的中文语言包
+    local app_name = install_package:match("^luci%-app%-(.+)$")
+    if app_name then
+        i18n_pkg = "luci-i18n-" .. app_name .. "-zh-cn"
+        packages_to_install = install_package .. " " .. i18n_pkg
+    end
+    
+    -- 安装包（兼容 opkg 和 apk，使用 --force-overwrite 避免冲突）
+    local cmd
+    if use_apk then
+        cmd = string.format("apk add --force-overwrite %s 2>&1", packages_to_install)
+    else
+        cmd = string.format("opkg install --force-overwrite %s 2>&1", packages_to_install)
+    end
+    
     local handle = io.popen(cmd)
     local output = ""
     if handle then
         output = handle:read("*a")
         local success = handle:close()
         
-        if success then
+        -- 检查输出判断是否成功（有些情况 close 返回值不准确）
+        local install_ok = success or output:match("Installing") or output:match("installed")
+        local i18n_missing = i18n_pkg and (output:match("unable to select packages") or output:match("not found"))
+        
+        if install_ok and not i18n_missing then
             result.code = 0
             result.message = "安装成功"
             result.output = output
+        elseif i18n_pkg and i18n_missing then
+            -- 语言包不存在，尝试只安装主包
+            if use_apk then
+                cmd = string.format("apk add --force-overwrite %s 2>&1", install_package)
+            else
+                cmd = string.format("opkg install --force-overwrite %s 2>&1", install_package)
+            end
+            handle = io.popen(cmd)
+            if handle then
+                output = handle:read("*a")
+                success = handle:close()
+                install_ok = success or output:match("Installing") or output:match("installed")
+                if install_ok then
+                    result.code = 0
+                    result.message = "安装成功（无中文语言包）"
+                    result.output = output
+                else
+                    result.code = 1
+                    result.message = "安装失败"
+                    result.output = output
+                end
+            end
         else
             result.code = 1
             result.message = "安装失败"
@@ -634,6 +851,12 @@ function action_remove_app()
         end
     end
     
+    -- 检测包管理器类型
+    local h = io.popen("which apk 2>/dev/null")
+    local apk_path = h:read("*a"):gsub("%s+", "")
+    h:close()
+    local use_apk = (apk_path ~= "")
+    
     -- 卸载包（支持 i18n 和直接包名）
     local packages_to_remove = {}
     
@@ -648,9 +871,14 @@ function action_remove_app()
             table.insert(packages_to_remove, app_config.package)
         end
     else
-        -- 动态应用：直接使用包名
+        -- 动态应用：使用包名，同时尝试卸载对应的语言包
         remove_package = pkg_name or app_id
         table.insert(packages_to_remove, remove_package)
+        -- 如果是 luci-app-xxx 格式，也卸载对应的中文语言包
+        local app_name = remove_package:match("^luci%-app%-(.+)$")
+        if app_name then
+            table.insert(packages_to_remove, "luci-i18n-" .. app_name .. "-zh-cn")
+        end
     end
     
     if #packages_to_remove == 0 then
@@ -661,14 +889,28 @@ function action_remove_app()
         return
     end
     
-    local cmd = string.format("(command -v opkg >/dev/null && opkg remove %s || apk del %s) 2>&1", table.concat(packages_to_remove, " "), table.concat(packages_to_remove, " "))
+    -- 参考 package-manager：使用 --force-removal-of-dependent-packages (opkg) 或 -r (apk)
+    -- opkg 支持 --autoremove 自动清理未使用的依赖，apk 默认启用
+    local cmd
+    local pkg_list = table.concat(packages_to_remove, " ")
+    if use_apk then
+        -- apk: -r 强制移除依赖此包的其他包
+        cmd = string.format("apk del -r %s 2>&1", pkg_list)
+    else
+        -- opkg: --force-removal-of-dependent-packages 强制移除
+        cmd = string.format("opkg remove --force-removal-of-dependent-packages %s 2>&1", pkg_list)
+    end
+    
     local handle = io.popen(cmd)
     local output = ""
     if handle then
         output = handle:read("*a")
         local success = handle:close()
         
-        if success then
+        -- 检查输出判断是否成功
+        local remove_ok = success or output:match("Removing") or output:match("removed")
+        
+        if remove_ok then
             result.code = 0
             result.message = "卸载成功"
             result.output = output

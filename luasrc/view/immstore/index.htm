@@ -215,7 +215,32 @@ body.dark .search-stats,
 .app-name-en {
     font-size: 12px;
     color: #999;
-    margin-bottom: 10px;
+    margin-bottom: 6px;
+}
+
+.app-meta {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 8px;
+    font-size: 11px;
+}
+
+.app-version {
+    color: #1890ff;
+    background: rgba(24, 144, 255, 0.1);
+    padding: 2px 6px;
+    border-radius: 3px;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.app-size {
+    color: #52c41a;
+    background: rgba(82, 196, 26, 0.1);
+    padding: 2px 6px;
+    border-radius: 3px;
 }
 
 .app-desc {
@@ -1260,12 +1285,22 @@ function renderApps() {
             iconHtml = app.icon || '📦';
         }
         
+        // 版本和大小信息
+        let metaHtml = '';
+        if (app.version || app.size_str) {
+            metaHtml = '<div class="app-meta">';
+            if (app.version) metaHtml += '<span class="app-version">' + app.version + '</span>';
+            if (app.size_str) metaHtml += '<span class="app-size">' + app.size_str + '</span>';
+            metaHtml += '</div>';
+        }
+        
         return `
         <div class="app-card ${app.installed ? 'installed' : ''}" data-id="${app.id}" onclick="openEditModal('${app.id}', event)">
             ${app.installed ? '<div class="installed-badge">已安装</div>' : ''}
             <div class="app-icon">${iconHtml}</div>
             <div class="app-name">${app.name}</div>
             <div class="app-name-en">${app.name_en}</div>
+            ${metaHtml}
             <div class="app-desc">${app.description}</div>
             <div class="app-actions">
                 ${app.installed 
