@@ -455,15 +455,44 @@ local function update_installed_status(apps)
     end
 end
 
+-- 检查缓存文件是否存在
+local function cache_exists()
+    local f = io.open(CACHE_FILE, "r")
+    if f then
+        f:close()
+        return true
+    end
+    return false
+end
+
+-- 执行软件源更新
+local function update_package_index()
+    -- 检测包管理器类型并更新
+    local h = io.popen("which apk 2>/dev/null")
+    local apk_path = h:read("*a"):gsub("%s+", "")
+    h:close()
+    
+    if apk_path ~= "" then
+        os.execute("apk update >/dev/null 2>&1")
+    else
+        os.execute("opkg update >/dev/null 2>&1")
+    end
+end
+
 -- 获取应用列表（优先读取缓存）
 function action_get_apps()
     -- 重置已安装包缓存（每次请求重新获取一次）
     installed_packages_cache = nil
     
     local result = load_cache()
+    local first_run = false
     
-    -- 如果没有缓存，生成新列表
+    -- 如果没有缓存，首次运行：更新软件源并生成列表
     if not result or not result.apps then
+        first_run = true
+        -- 首次运行，自动更新软件源
+        update_package_index()
+        
         local apps = generate_apps_list()
         save_cache(apps)
         result = {
@@ -478,7 +507,8 @@ function action_get_apps()
     update_installed_status(result.apps)
     
     result.code = 0
-    result.cached = true
+    result.cached = not first_run
+    result.first_run = first_run
     
     http.prepare_content("application/json")
     http.write(json.stringify(result))
@@ -488,6 +518,9 @@ end
 function action_refresh_apps()
     -- 重置已安装包缓存
     installed_packages_cache = nil
+    
+    -- 刷新时也更新软件源
+    update_package_index()
     
     local apps = generate_apps_list()
     save_cache(apps)
